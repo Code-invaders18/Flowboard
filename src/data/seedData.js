@@ -1,0 +1,358 @@
+import {
+  NODE_TYPES,
+  USER_ROLES,
+  VISIBILITY,
+  GRANT_MODES,
+  STATUS_CATEGORIES,
+} from '../constants/constants';
+
+// Builds default three statuses with unique ids for a list.
+function makeStatuses(listKey, extra = []) {
+  const base = [
+    { id: `${listKey}-s-todo`, name: 'Todo', category: STATUS_CATEGORIES.TODO, color: '#94a3b8', position: 0 },
+    { id: `${listKey}-s-ip`, name: 'In Progress', category: STATUS_CATEGORIES.IN_PROGRESS, color: '#3b82f6', position: 1 },
+    { id: `${listKey}-s-done`, name: 'Done', category: STATUS_CATEGORIES.DONE, color: '#22c55e', position: 2 },
+  ];
+  return [...base, ...extra];
+}
+
+const backlogStatuses = makeStatuses('backlog');
+const sprintStatuses = makeStatuses('sprint', [
+  {
+    id: 'sprint-s-review',
+    name: 'In Review',
+    category: STATUS_CATEGORIES.IN_PROGRESS,
+    color: '#a855f7',
+    position: 3,
+  },
+]);
+const contentStatuses = makeStatuses('content');
+
+export const seedUsers = [
+  { id: 'u-alice', name: 'Alice', role: USER_ROLES.ADMIN, color: '#2563eb' },
+  { id: 'u-bob', name: 'Bob', role: USER_ROLES.MEMBER, color: '#16a34a' },
+  { id: 'u-carol', name: 'Carol', role: USER_ROLES.MEMBER, color: '#db2777' },
+];
+
+export const seedContainers = [
+  {
+    id: 'ws-acme',
+    name: 'Acme Team',
+    type: NODE_TYPES.WORKSPACE,
+    parentId: null,
+    position: 0,
+    visibility: VISIBILITY.PUBLIC,
+    archivedAt: null,
+  },
+  {
+    id: 'sp-eng',
+    name: 'Engineering',
+    type: NODE_TYPES.SPACE,
+    parentId: 'ws-acme',
+    position: 0,
+    visibility: VISIBILITY.PUBLIC,
+    archivedAt: null,
+  },
+  {
+    id: 'sp-mkt',
+    name: 'Marketing',
+    type: NODE_TYPES.SPACE,
+    parentId: 'ws-acme',
+    position: 1,
+    visibility: VISIBILITY.PRIVATE,
+    archivedAt: null,
+  },
+  {
+    id: 'fd-q2',
+    name: 'Q2 Launch',
+    type: NODE_TYPES.FOLDER,
+    parentId: 'sp-eng',
+    position: 0,
+    visibility: VISIBILITY.PUBLIC,
+    archivedAt: null,
+  },
+  {
+    id: 'fd-camp',
+    name: 'Campaigns',
+    type: NODE_TYPES.FOLDER,
+    parentId: 'sp-mkt',
+    position: 0,
+    visibility: VISIBILITY.PUBLIC,
+    archivedAt: null,
+  },
+  {
+    id: 'li-backlog',
+    name: 'Backlog',
+    type: NODE_TYPES.LIST,
+    parentId: 'fd-q2',
+    position: 0,
+    visibility: VISIBILITY.PUBLIC,
+    archivedAt: null,
+    statuses: backlogStatuses,
+  },
+  {
+    id: 'li-sprint',
+    name: 'Sprint Board',
+    type: NODE_TYPES.LIST,
+    parentId: 'fd-q2',
+    position: 1,
+    visibility: VISIBILITY.PRIVATE,
+    archivedAt: null,
+    statuses: sprintStatuses,
+  },
+  {
+    id: 'li-content',
+    name: 'Content Plan',
+    type: NODE_TYPES.LIST,
+    parentId: 'fd-camp',
+    position: 0,
+    visibility: VISIBILITY.PUBLIC,
+    archivedAt: null,
+    statuses: contentStatuses,
+  },
+];
+
+export const seedGrants = [
+  { resourceId: 'li-sprint', userId: 'u-bob', mode: GRANT_MODES.ALLOW },
+  { resourceId: 'sp-mkt', userId: 'u-carol', mode: GRANT_MODES.ALLOW },
+  { resourceId: 'li-backlog', userId: 'u-carol', mode: GRANT_MODES.DENY },
+];
+
+// Helper to build a seed task with consistent timestamps.
+function task(partial) {
+  return {
+    description: '',
+    assigneeIds: [],
+    dueDate: null,
+    priority: 'normal',
+    createdAt: '2026-03-01T10:00:00.000Z',
+    updatedAt: '2026-03-01T10:00:00.000Z',
+    ...partial,
+  };
+}
+
+export const seedTasks = [
+  // Backlog (8)
+  task({
+    id: 't-1',
+    title: 'Define API contracts',
+    description: 'Document REST endpoints for launch.',
+    status: 'backlog-s-todo',
+    priority: 'high',
+    assigneeIds: ['u-alice'],
+    dueDate: '2026-03-10T00:00:00.000Z',
+    position: 0,
+    primaryListId: 'li-backlog',
+  }),
+  task({
+    id: 't-2',
+    title: 'Set up CI pipeline',
+    status: 'backlog-s-todo',
+    priority: 'urgent',
+    assigneeIds: ['u-bob'],
+    dueDate: '2026-02-01T00:00:00.000Z',
+    position: 1,
+    primaryListId: 'li-backlog',
+  }),
+  task({
+    id: 't-3',
+    title: 'Write onboarding docs',
+    description: 'Help new engineers ramp up.',
+    status: 'backlog-s-ip',
+    priority: 'normal',
+    assigneeIds: ['u-alice', 'u-bob'],
+    dueDate: '2026-04-01T00:00:00.000Z',
+    position: 0,
+    primaryListId: 'li-backlog',
+  }),
+  task({
+    id: 't-4',
+    title: 'Audit dependencies',
+    status: 'backlog-s-ip',
+    priority: 'low',
+    assigneeIds: [],
+    dueDate: null,
+    position: 1,
+    primaryListId: 'li-backlog',
+  }),
+  task({
+    id: 't-5',
+    title: 'Ship auth hotfix',
+    description: 'Fix session expiry race.',
+    status: 'backlog-s-done',
+    priority: 'urgent',
+    assigneeIds: ['u-bob'],
+    dueDate: '2026-02-20T00:00:00.000Z',
+    position: 0,
+    primaryListId: 'li-backlog',
+  }),
+  task({
+    id: 't-6',
+    title: 'Triaging backlog items',
+    status: 'backlog-s-todo',
+    priority: 'none',
+    assigneeIds: ['u-alice'],
+    dueDate: '2026-05-01T00:00:00.000Z',
+    position: 2,
+    primaryListId: 'li-backlog',
+  }),
+  task({
+    id: 't-7',
+    title: 'Refactor search index',
+    description: '',
+    status: 'backlog-s-done',
+    priority: 'high',
+    assigneeIds: ['u-alice'],
+    dueDate: null,
+    position: 1,
+    primaryListId: 'li-backlog',
+  }),
+  task({
+    id: 't-8',
+    title: 'Plan Q3 capacity',
+    status: 'backlog-s-ip',
+    priority: 'normal',
+    assigneeIds: ['u-bob'],
+    dueDate: '2026-01-15T00:00:00.000Z',
+    position: 2,
+    primaryListId: 'li-backlog',
+  }),
+  // Sprint Board (7)
+  task({
+    id: 't-9',
+    title: 'Kanban drag polish',
+    description: 'Improve drop indicators.',
+    status: 'sprint-s-todo',
+    priority: 'high',
+    assigneeIds: ['u-bob'],
+    dueDate: '2026-03-20T00:00:00.000Z',
+    position: 0,
+    primaryListId: 'li-sprint',
+  }),
+  task({
+    id: 't-10',
+    title: 'Permission edge cases',
+    status: 'sprint-s-ip',
+    priority: 'urgent',
+    assigneeIds: ['u-alice', 'u-bob'],
+    dueDate: '2026-02-10T00:00:00.000Z',
+    position: 0,
+    primaryListId: 'li-sprint',
+  }),
+  task({
+    id: 't-11',
+    title: 'Sidebar reorder DnD',
+    status: 'sprint-s-review',
+    priority: 'normal',
+    assigneeIds: ['u-bob'],
+    dueDate: '2026-03-25T00:00:00.000Z',
+    position: 0,
+    primaryListId: 'li-sprint',
+  }),
+  task({
+    id: 't-12',
+    title: 'Toast feedback pass',
+    description: 'Success and error toasts.',
+    status: 'sprint-s-done',
+    priority: 'low',
+    assigneeIds: ['u-alice'],
+    dueDate: null,
+    position: 0,
+    primaryListId: 'li-sprint',
+  }),
+  task({
+    id: 't-13',
+    title: 'Empty state illustrations',
+    status: 'sprint-s-todo',
+    priority: 'none',
+    assigneeIds: [],
+    dueDate: '2026-04-10T00:00:00.000Z',
+    position: 1,
+    primaryListId: 'li-sprint',
+  }),
+  task({
+    id: 't-14',
+    title: 'Focus trap in drawer',
+    status: 'sprint-s-ip',
+    priority: 'high',
+    assigneeIds: ['u-bob'],
+    dueDate: '2026-03-05T00:00:00.000Z',
+    position: 1,
+    primaryListId: 'li-sprint',
+  }),
+  task({
+    id: 't-15',
+    title: 'Seed data review',
+    description: '',
+    status: 'sprint-s-review',
+    priority: 'normal',
+    assigneeIds: ['u-alice'],
+    dueDate: '2026-01-01T00:00:00.000Z',
+    position: 1,
+    primaryListId: 'li-sprint',
+  }),
+  // Content Plan (5)
+  task({
+    id: 't-16',
+    title: 'Draft launch blog',
+    description: 'Announce Q2 Launch.',
+    status: 'content-s-todo',
+    priority: 'high',
+    assigneeIds: ['u-carol'],
+    dueDate: '2026-03-15T00:00:00.000Z',
+    position: 0,
+    primaryListId: 'li-content',
+  }),
+  task({
+    id: 't-17',
+    title: 'Social calendar',
+    status: 'content-s-ip',
+    priority: 'normal',
+    assigneeIds: ['u-carol', 'u-alice'],
+    dueDate: '2026-02-28T00:00:00.000Z',
+    position: 0,
+    primaryListId: 'li-content',
+  }),
+  task({
+    id: 't-18',
+    title: 'Case study outline',
+    status: 'content-s-todo',
+    priority: 'low',
+    assigneeIds: [],
+    dueDate: null,
+    position: 1,
+    primaryListId: 'li-content',
+  }),
+  task({
+    id: 't-19',
+    title: 'Update brand kit',
+    description: 'New logo assets.',
+    status: 'content-s-done',
+    priority: 'urgent',
+    assigneeIds: ['u-carol'],
+    dueDate: '2026-01-20T00:00:00.000Z',
+    position: 0,
+    primaryListId: 'li-content',
+  }),
+  task({
+    id: 't-20',
+    title: 'Newsletter draft',
+    status: 'content-s-ip',
+    priority: 'none',
+    assigneeIds: ['u-carol'],
+    dueDate: '2026-04-20T00:00:00.000Z',
+    position: 1,
+    primaryListId: 'li-content',
+  }),
+];
+
+// Returns a deep-cloned seed state suitable for createStore.
+export function createSeedState() {
+  return {
+    containers: structuredClone(seedContainers),
+    tasks: structuredClone(seedTasks),
+    users: structuredClone(seedUsers),
+    grants: structuredClone(seedGrants),
+    currentUserId: 'u-alice',
+  };
+}
